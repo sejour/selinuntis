@@ -1,0 +1,9 @@
+# IntelliJ
+build/
+out/
+
+# gradle
+.gradle/
+
+# misc
+.DS_Store
