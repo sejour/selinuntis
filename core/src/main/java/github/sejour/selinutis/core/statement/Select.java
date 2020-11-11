@@ -1,25 +1,16 @@
 package github.sejour.selinutis.core.statement;
 
-import org.apache.commons.lang3.NotImplementedException;
+import github.sejour.selinutis.core.statement.command.FromTableClass;
 
 public class Select {
-    public static <T> Query<T> from(Class<T> resultType, String... columns) {
-        // TODO: implement
-        throw new NotImplementedException();
+    public static <T> Query<T> from(Class<T> tableClass) {
+        return from(tableClass, null);
     }
 
-    public static <T, S> Query<T> from(Query<S> subQuery, Class<T> resultType, String... columns) {
-        // TODO: implement
-        throw new NotImplementedException();
-    }
-
-    public static <T> Query<Long> count(Class<T> tableClass) {
-        // TODO: implement
-        throw new NotImplementedException();
-    }
-
-    public static <T> Query<Boolean> exist(Class<T> tableClass) {
-        // TODO: implement
-        throw new NotImplementedException();
+    public static <T> Query<T> from(Class<T> tableClass, String alias) {
+        return QueryImpl
+                .<T>builder()
+                .from(new FromTableClass(tableClass, alias))
+                .build();
     }
 }
