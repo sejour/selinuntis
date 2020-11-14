@@ -9,7 +9,7 @@ import github.sejour.selinutis.core.statement.expression.ExpressionUtils;
 public class ExpressionUtilsTest {
     @Test
     public void testClause() {
-        assertThat(ExpressionUtils.clause("test-expression")).isEqualTo("(test-expression)");
+        assertThat(ExpressionUtils.factor("test-expression")).isEqualTo("(test-expression)");
     }
 
 

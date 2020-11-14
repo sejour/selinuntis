@@ -10,12 +10,12 @@ import java.util.stream.Collectors;
 import lombok.NonNull;
 
 public class ExpressionUtils {
-    public static String clause(@NonNull String expression) {
+    public static String factor(@NonNull String expression) {
         return format("(%s)", expression);
     }
 
     public static String in(@NonNull String... values) {
-        return format("IN %s", clause(join(",", values)));
+        return format("IN %s", factor(join(",", values)));
     }
 
     public static String between(@NonNull String start, @NonNull String end) {
@@ -25,14 +25,14 @@ public class ExpressionUtils {
     public static String and(@NonNull String... conditions) {
         return Arrays.stream(conditions)
                      .filter(Objects::nonNull)
-                     .map(cnd -> format("%s", clause(cnd)))
+                     .map(cnd -> format("%s", factor(cnd)))
                      .collect(Collectors.joining(" AND "));
     }
 
     public static String or(@NonNull String... conditions) {
         return Arrays.stream(conditions)
                      .filter(Objects::nonNull)
-                     .map(cnd -> format("%s", clause(cnd)))
+                     .map(cnd -> format("%s", factor(cnd)))
                      .collect(Collectors.joining(" OR "));
     }
 }

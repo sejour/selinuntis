@@ -1,4 +1,4 @@
-package github.sejour.selinutis.core.statement.command;
+package github.sejour.selinutis.core.statement.clause;
 
 import lombok.RequiredArgsConstructor;
 

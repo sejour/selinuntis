@@ -1,20 +1,23 @@
 package github.sejour.selinutis.core.statement;
 
-import static java.util.Arrays.asList;
+import static java.lang.String.format;
 
 import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
 
 import github.sejour.selinutis.core.StatementBuilder;
 import github.sejour.selinutis.core.error.StatementBuildException;
-import github.sejour.selinutis.core.statement.command.Command;
-import github.sejour.selinutis.core.statement.command.CommandType;
-import github.sejour.selinutis.core.statement.command.From;
-import github.sejour.selinutis.core.statement.command.GeneralCommand;
-import github.sejour.selinutis.core.statement.command.Join;
-import github.sejour.selinutis.core.statement.command.JoinType;
+import github.sejour.selinutis.core.statement.clause.Clause;
+import github.sejour.selinutis.core.statement.clause.FromTableClass;
+import github.sejour.selinutis.core.statement.clause.JoinType;
+import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
+import github.sejour.selinutis.core.statement.clause.PlainClause;
+import github.sejour.selinutis.core.statement.clause.TableObject;
 import github.sejour.selinutis.core.statement.expression.OrderExpression;
 import github.sejour.selinutis.core.statement.expression.WhereExpression;
-import github.sejour.selinutis.core.utils.ListUtils;
+import github.sejour.selinutis.core.utils.CollectionUtils;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -23,49 +26,85 @@ import lombok.Value;
 @Value
 @Builder(toBuilder = true)
 public class QueryImpl<T> implements Query<T> {
-    List<Command> preCommands;
+    List<Clause> preClauses;
     boolean distinct;
     List<String> selectFields;
-    From from;
-    List<Command> postCommands;
+    FromTableClass from;
+    Map<String, TableObject> tableObjectMap;
+    List<Clause> postClauses;
     Long limit;
 
-    @Override
-    public Query<T> preSelect(String query) {
-        return preSelect(GeneralCommand.builder()
-                                       .commandType(CommandType.PLAIN_TEXT)
-                                       .expression(query)
-                                       .build());
+    public static <T> QueryImpl<T> from(FromTableClass tableClass) {
+        return QueryImpl
+                .<T>builder()
+                .from(tableClass)
+                .tableObjectMap(ImmutableMap.<String, TableObject>builder()
+                                        .put(tableClass.getAlias(), tableClass)
+                                        .build())
+                .build();
     }
 
-    @Override
-    public Query<T> preSelect(Command command) {
+    protected Query<T> preSelect(PlainClause clause) {
         return toBuilder()
-                .preCommands(ListUtils.safeCopyAsImmutableList(preCommands, command))
+                .preClauses(CollectionUtils.safeCopyAsImmutableList(preClauses, clause))
+                .build();
+    }
+
+    protected Query<T> postSelect(PlainClause clause) {
+        return toBuilder()
+                .postClauses(CollectionUtils.safeCopyAsImmutableList(postClauses, clause))
+                .build();
+    }
+
+    protected Query<T> join(ObjectFieldJoin join) {
+        if (tableObjectMap.containsKey(join.getAlias())) {
+            throw new IllegalArgumentException(format("duplicate alias of join field: %s",
+                                                      join.getAlias()));
+        }
+
+        return toBuilder()
+                .postClauses(CollectionUtils.safeCopyAsImmutableList(postClauses, join))
+                .tableObjectMap(ImmutableMap.<String, TableObject>builder()
+                                        .putAll(tableObjectMap)
+                                        .put(join.getAlias(), join)
+                                        .build())
                 .build();
     }
 
     @Override
-    public Query<T> postSelect(String query) {
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.PLAIN_TEXT)
-                                        .expression(query)
-                                        .build());
+    public Query<T> preSelect(String clause) {
+        if (clause == null) {
+            return this;
+        }
+
+        return preSelect(PlainClause.builder()
+                                    .keyword(Keyword.NONE)
+                                    .expression(clause)
+                                    .build());
     }
 
     @Override
-    public Query<T> postSelect(Command command) {
-        return toBuilder()
-                .postCommands(ListUtils.safeCopyAsImmutableList(preCommands, command))
-                .build();
+    public Query<T> postSelect(String clause) {
+        if (clause == null) {
+            return this;
+        }
+
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.NONE)
+                                     .expression(clause)
+                                     .build());
     }
 
     @Override
     public Query<T> with(String expression) {
-        return preSelect(GeneralCommand.builder()
-                                       .commandType(CommandType.WITH)
-                                       .expression(expression)
-                                       .build());
+        if (expression == null) {
+            return this;
+        }
+
+        return preSelect(PlainClause.builder()
+                                    .keyword(Keyword.WITH)
+                                    .expression(expression)
+                                    .build());
     }
 
     @Override
@@ -76,9 +115,13 @@ public class QueryImpl<T> implements Query<T> {
     }
 
     @Override
-    public Query<T> select(@NonNull String... fields) {
+    public Query<T> select(String... fields) {
+        if (fields == null) {
+            return this;
+        }
+
         return toBuilder()
-                .selectFields(ListUtils.safeCopyAsImmutableList(selectFields, fields))
+                .selectFields(CollectionUtils.safeCopyAsImmutableList(selectFields, fields))
                 .build();
     }
 
@@ -88,69 +131,36 @@ public class QueryImpl<T> implements Query<T> {
     }
 
     @Override
-    public Query<T> innerJoin(@NonNull String fieldName, @NonNull String alias) {
-        return postSelect(Join.builder()
-                              .type(JoinType.INNER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(false)
-                              .build());
+    public Query<T> innerJoin(@NonNull String objectField, @NonNull String alias) {
+        return join(new ObjectFieldJoin(JoinType.INNER, objectField, alias, false));
     }
 
     @Override
-    public Query<T> innerJoinFetch(@NonNull String fieldName, @NonNull String alias,
+    public Query<T> innerJoinFetch(@NonNull String objectField, @NonNull String alias,
                                    @NonNull String... fetchFields) {
-        return postSelect(Join.builder()
-                              .type(JoinType.INNER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(true)
-                              .fetchFields(asList(fetchFields))
-                              .build());
+        return join(new ObjectFieldJoin(JoinType.INNER, objectField, alias, true, fetchFields));
     }
 
     @Override
-    public Query<T> leftOuterJoin(@NonNull String fieldName, @NonNull String alias) {
-        return postSelect(Join.builder()
-                              .type(JoinType.LEFT_OUTER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(false)
-                              .build());
+    public Query<T> leftOuterJoin(@NonNull String objectField, @NonNull String alias) {
+        return join(new ObjectFieldJoin(JoinType.LEFT_OUTER, objectField, alias, false));
     }
 
     @Override
-    public Query<T> leftOuterJoinFetch(@NonNull String fieldName, @NonNull String alias,
+    public Query<T> leftOuterJoinFetch(@NonNull String objectField, @NonNull String alias,
                                        @NonNull String... fetchFields) {
-        return postSelect(Join.builder()
-                              .type(JoinType.LEFT_OUTER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(true)
-                              .fetchFields(asList(fetchFields))
-                              .build());
+        return join(new ObjectFieldJoin(JoinType.LEFT_OUTER, objectField, alias, true, fetchFields));
     }
 
     @Override
-    public Query<T> rightOuterJoin(@NonNull String fieldName, @NonNull String alias) {
-        return postSelect(Join.builder()
-                              .type(JoinType.RIGHT_OUTER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(false)
-                              .build());
+    public Query<T> rightOuterJoin(@NonNull String objectField, @NonNull String alias) {
+        return join(new ObjectFieldJoin(JoinType.RIGHT_OUTER, objectField, alias, false));
     }
 
     @Override
-    public Query<T> rightOuterJoinFetch(@NonNull String fieldName, @NonNull String alias,
+    public Query<T> rightOuterJoinFetch(@NonNull String objectField, @NonNull String alias,
                                         @NonNull String... fetchFields) {
-        return postSelect(Join.builder()
-                              .type(JoinType.RIGHT_OUTER)
-                              .fieldName(fieldName)
-                              .alias(alias)
-                              .fetch(true)
-                              .fetchFields(asList(fetchFields))
-                              .build());
+        return join(new ObjectFieldJoin(JoinType.RIGHT_OUTER, objectField, alias, true, fetchFields));
     }
 
     @Override
@@ -159,10 +169,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.WHERE)
-                                        .expression(expression)
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.WHERE)
+                                     .expression(expression)
+                                     .build());
     }
 
     @Override
@@ -171,10 +181,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.WHERE)
-                                        .expression(expression.getExpression())
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.WHERE)
+                                     .expression(expression.getExpression())
+                                     .build());
     }
 
     @Override
@@ -183,10 +193,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.ORDER_BY)
-                                        .expression(expression)
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.ORDER_BY)
+                                     .expression(expression)
+                                     .build());
     }
 
     @Override
@@ -195,10 +205,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.HAVING)
-                                        .expression(expression)
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.HAVING)
+                                     .expression(expression)
+                                     .build());
     }
 
     @Override
@@ -207,10 +217,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.HAVING)
-                                        .expression(expression.getExpression())
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.HAVING)
+                                     .expression(expression.getExpression())
+                                     .build());
     }
 
     @Override
@@ -219,10 +229,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.ORDER_BY)
-                                        .expression(expression)
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.ORDER_BY)
+                                     .expression(expression)
+                                     .build());
     }
 
     @Override
@@ -231,10 +241,10 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(GeneralCommand.builder()
-                                        .commandType(CommandType.WHERE)
-                                        .expression(expression.getExpression())
-                                        .build());
+        return postSelect(PlainClause.builder()
+                                     .keyword(Keyword.WHERE)
+                                     .expression(expression.getExpression())
+                                     .build());
     }
 
     @Override
@@ -244,6 +254,7 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
+    // TODO: return Statement
     @Override
     public String build(StatementBuilder builder) throws StatementBuildException {
         return builder.buildSelect(this);
