@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableMap;
 import github.sejour.selinutis.core.StatementBuilder;
 import github.sejour.selinutis.core.error.StatementBuildException;
 import github.sejour.selinutis.core.statement.clause.Clause;
-import github.sejour.selinutis.core.statement.clause.FromTableClass;
+import github.sejour.selinutis.core.statement.clause.From;
 import github.sejour.selinutis.core.statement.clause.JoinType;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
 import github.sejour.selinutis.core.statement.clause.PlainClause;
@@ -26,18 +26,18 @@ import lombok.Value;
 @Value
 @Builder(toBuilder = true)
 public class QueryImpl<T> implements Query<T> {
+    Map<String, TableObject> tableObjectMap;
+    String fromObjectAlias;
     List<Clause> preClauses;
     boolean distinct;
     List<String> selectFields;
-    FromTableClass from;
-    Map<String, TableObject> tableObjectMap;
     List<Clause> postClauses;
     Long limit;
 
-    public static <T> QueryImpl<T> from(FromTableClass tableClass) {
+    public static <T> QueryImpl<T> from(From tableClass) {
         return QueryImpl
                 .<T>builder()
-                .from(tableClass)
+                .fromObjectAlias(tableClass.getAlias())
                 .tableObjectMap(ImmutableMap.<String, TableObject>builder()
                                         .put(tableClass.getAlias(), tableClass)
                                         .build())
@@ -254,9 +254,8 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
-    // TODO: return Statement
     @Override
-    public String build(StatementBuilder builder) throws StatementBuildException {
+    public Statement build(StatementBuilder builder) throws StatementBuildException {
         return builder.buildSelect(this);
     }
 }

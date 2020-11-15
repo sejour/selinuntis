@@ -33,5 +33,5 @@ public interface Query<T> {
         return f.apply(this);
     }
 
-    String build(StatementBuilder builder) throws StatementBuildException;
+    Statement build(StatementBuilder builder) throws StatementBuildException;
 }
