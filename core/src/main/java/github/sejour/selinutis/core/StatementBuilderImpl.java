@@ -1,6 +1,6 @@
 package github.sejour.selinutis.core;
 
-import static github.sejour.selinutis.core.utils.CollectionUtils.isEmpty;
+import static github.sejour.selinutis.core.utils.CollectionUtils.isNotEmpty;
 import static java.lang.String.format;
 import static java.lang.String.join;
 
@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.collect.ImmutableMap;
 
 import github.sejour.selinutis.core.error.StatementBuildException;
@@ -19,6 +21,7 @@ import github.sejour.selinutis.core.statement.Keyword;
 import github.sejour.selinutis.core.statement.Query;
 import github.sejour.selinutis.core.statement.QueryImpl;
 import github.sejour.selinutis.core.statement.Statement;
+import github.sejour.selinutis.core.statement.clause.Clause;
 import github.sejour.selinutis.core.statement.clause.From;
 import github.sejour.selinutis.core.statement.clause.FromTableClass;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
@@ -42,8 +45,25 @@ public class StatementBuilderImpl implements StatementBuilder {
         final var fromObjectAlias = queryImpl.getFromObjectAlias();
         final var objectInfoMap = createObjectInfoMap(
                 fromObjectAlias, queryImpl.getTableObjectMap());
+        final var fetchObjects = objectInfoMap
+                .values()
+                .stream()
+                .filter(info -> info instanceof FetchObjectInfo)
+                .map(info -> (FetchObjectInfo) info)
+                .collect(Collectors.toSet());
 
-        return new Statement("TODO", objectInfoMap, fromObjectAlias);
+        final var builder = new StringBuilder();
+
+        if (isNotEmpty(queryImpl.getPreClauses())) {
+            builder.append(buildClause(queryImpl.getPreClauses(), objectInfoMap));
+        }
+
+        builder.append(" ")
+               .append(buildSelect(queryImpl.isDistinct(), queryImpl.getSelectFields(), fetchObjects))
+               .append(" ")
+               .append(buildClause(queryImpl.getPostClauses(), objectInfoMap));
+
+        return new Statement(builder.toString(), objectInfoMap, fromObjectAlias);
     }
 
     private Map<String, ObjectInfo> createObjectInfoMap(String fromObjectAlias,
@@ -90,6 +110,7 @@ public class StatementBuilderImpl implements StatementBuilder {
             throws StatementBuildException {
         ObjectInfo objectInfo = null;
 
+        // TODO: FetchObjectInfo
         if (node.object instanceof FromTableClass) {
             final var from = (FromTableClass) node.object;
             final var tableInfo = Optional
@@ -126,27 +147,33 @@ public class StatementBuilderImpl implements StatementBuilder {
         }
     }
 
-    private static String buildSelectFrom(boolean distinct,
-                                          List<String> selectFields,
-                                          FromObjectInfo fromObjectInfo,
-                                          Set<ObjectInfo> fetchObjects) {
-        final var builder = new StringBuilder(Keyword.SELECT.getClause())
-                .append(" ");
+    private static String buildSelect(boolean distinct,
+                                      List<String> selectFields,
+                                      Set<FetchObjectInfo> fetchObjects) throws StatementBuildException {
+        final var builder = new StringBuilder(Keyword.SELECT.getClause());
 
         if (distinct) {
-            builder.append(Keyword.DISTINCT.getClause());
+            builder.append(" ")
+                   .append(Keyword.DISTINCT.getClause());
         }
 
-        if (isEmpty(selectFields)) {
-            // TODO
-        } else {
-            builder.append(join(",", selectFields));
+        final var fields = join(",",
+             join(",", selectFields),
+             fetchObjects.stream()
+                         .map(FetchObjectInfo::getFetchColumnsString)
+                         .collect(Collectors.joining(",")));
+        if (StringUtils.isEmpty(fields)) {
+            throw new StatementBuildException("select fields not exist");
         }
 
-        return builder.append(Keyword.FROM.getClause())
-                      .append(" ")
-                      .append(fromObjectInfo.getClause())
-                      .toString();
+        return builder.append(" ")
+                      .append(fields).toString();
+    }
+
+    private static String buildClause(List<Clause> sequence,
+                                      Map<String, ObjectInfo> objectInfoMap) {
+        // TODO: impl
+        return null;
     }
 }
 

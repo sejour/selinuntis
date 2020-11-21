@@ -15,11 +15,11 @@ public interface Query<T> {
     Query<T> select(String... fields);
     Query<T> count();
     Query<T> innerJoin(String objectField, String alias);
-    Query<T> innerJoinFetch(String objectField, String alias, String... fetchFields);
+    Query<T> innerJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> leftOuterJoin(String objectField, String alias);
-    Query<T> leftOuterJoinFetch(String objectField, String alias, String... fetchFields);
+    Query<T> leftOuterJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> rightOuterJoin(String objectField, String alias);
-    Query<T> rightOuterJoinFetch(String objectField, String alias, String... fetchFields);
+    Query<T> rightOuterJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> where(String expression);
     Query<T> where(WhereExpression expression);
     Query<T> groupBy(String expression);

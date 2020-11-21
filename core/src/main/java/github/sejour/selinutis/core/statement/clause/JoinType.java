@@ -1,5 +1,6 @@
 package github.sejour.selinutis.core.statement.clause;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -8,5 +9,6 @@ public enum JoinType {
     LEFT_OUTER("LEFT OUTER"),
     RIGHT_OUTER("RIGHT OUTER");
 
-    final String prefix;
+    @Getter
+    private final String prefix;
 }

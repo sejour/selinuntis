@@ -1,9 +1,11 @@
 package github.sejour.selinutis.core.statement.clause;
 
-import lombok.Value;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-@Value
+@Getter
+@RequiredArgsConstructor
 public class FromTableClass extends From implements TableObject {
-    Class<?> tableClass;
-    String alias;
+    private final Class<?> tableClass;
+    private final String alias;
 }

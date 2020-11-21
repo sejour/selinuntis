@@ -1,17 +1,23 @@
 package github.sejour.selinutis.core;
 
+import static java.lang.String.join;
+
 import org.apache.commons.lang3.StringUtils;
 
-import lombok.Value;
+import github.sejour.selinutis.core.statement.Keyword;
 
-@Value
+import lombok.Getter;
+
+@Getter
 public class FromTableObjectInfo implements FromObjectInfo {
-    String alias;
-    TableInfo info;
+    private final String alias;
+    private final TableInfo info;
+    private final String clause;
 
-    @Override
-    public String getClause() {
-        return info.getTableName();
+    public FromTableObjectInfo(String alias, TableInfo info) {
+        this.alias = alias;
+        this.info = info;
+        clause = join(" ", Keyword.FROM.getClause(), info.getTableName());
     }
 
     @Override

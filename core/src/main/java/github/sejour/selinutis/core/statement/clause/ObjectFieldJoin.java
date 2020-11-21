@@ -1,26 +1,22 @@
 package github.sejour.selinutis.core.statement.clause;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
-
-import java.util.List;
+import static java.lang.String.join;
 
 import org.apache.commons.lang3.StringUtils;
 
 import github.sejour.selinutis.core.statement.Keyword;
 
-import lombok.Value;
+import lombok.Getter;
 
-@Value
+@Getter
 public class ObjectFieldJoin implements Join, TableObject {
-    JoinType type;
-    String parentObjectAlias;
-    String fieldName;
-    String alias;
-    boolean fetch;
-    List<String> fetchFields;
+    private final JoinType type;
+    private final String parentObjectAlias;
+    private final String fieldName;
+    private final String alias;
 
-    public ObjectFieldJoin(JoinType type, String objectField, String alias, boolean fetch, String... fetchFields) {
+    public ObjectFieldJoin(JoinType type, String objectField, String alias) {
         if (StringUtils.isBlank(objectField)) {
             throw new IllegalArgumentException("objectField must not be blank");
         }
@@ -30,8 +26,6 @@ public class ObjectFieldJoin implements Join, TableObject {
 
         this.type = type;
         this.alias = alias;
-        this.fetch = fetch;
-        this.fetchFields = asList(fetchFields);
 
         final var parsed = StringUtils.split(objectField, ".");
         if (parsed == null) {
@@ -55,5 +49,9 @@ public class ObjectFieldJoin implements Join, TableObject {
     @Override
     public Keyword getKeyword() {
         return Keyword.JOIN;
+    }
+
+    public String getCompletedKeyword() {
+        return join(" ", type.getPrefix(), getKeyword().getClause());
     }
 }

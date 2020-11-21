@@ -2,9 +2,11 @@ package github.sejour.selinutis.core.statement;
 
 import static java.lang.String.format;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import github.sejour.selinutis.core.StatementBuilder;
@@ -13,11 +15,11 @@ import github.sejour.selinutis.core.statement.clause.Clause;
 import github.sejour.selinutis.core.statement.clause.From;
 import github.sejour.selinutis.core.statement.clause.JoinType;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
+import github.sejour.selinutis.core.statement.clause.ObjectFieldJoinFetch;
 import github.sejour.selinutis.core.statement.clause.PlainClause;
 import github.sejour.selinutis.core.statement.clause.TableObject;
 import github.sejour.selinutis.core.statement.expression.OrderExpression;
 import github.sejour.selinutis.core.statement.expression.WhereExpression;
-import github.sejour.selinutis.core.utils.CollectionUtils;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -32,27 +34,40 @@ public class QueryImpl<T> implements Query<T> {
     boolean distinct;
     List<String> selectFields;
     List<Clause> postClauses;
-    Long limit;
+    Long limit; // TODO: clauseに含める
 
-    public static <T> QueryImpl<T> from(From tableClass) {
+    public static <T> QueryImpl<T> from(@NonNull From tableClass) {
         return QueryImpl
                 .<T>builder()
-                .fromObjectAlias(tableClass.getAlias())
                 .tableObjectMap(ImmutableMap.<String, TableObject>builder()
                                         .put(tableClass.getAlias(), tableClass)
                                         .build())
+                .fromObjectAlias(tableClass.getAlias())
+                .preClauses(Collections.emptyList())
+                .distinct(false)
+                .selectFields(Collections.emptyList())
+                .postClauses(ImmutableList.<Clause>builder()
+                                     .add(tableClass)
+                                     .build())
+                .limit(null)
                 .build();
     }
 
     protected Query<T> preSelect(PlainClause clause) {
         return toBuilder()
-                .preClauses(CollectionUtils.safeCopyAsImmutableList(preClauses, clause))
+                .preClauses(ImmutableList.<Clause>builder()
+                                    .addAll(preClauses)
+                                    .add(clause)
+                                    .build())
                 .build();
     }
 
     protected Query<T> postSelect(PlainClause clause) {
         return toBuilder()
-                .postClauses(CollectionUtils.safeCopyAsImmutableList(postClauses, clause))
+                .postClauses(ImmutableList.<Clause>builder()
+                                     .addAll(postClauses)
+                                     .add(clause)
+                                     .build())
                 .build();
     }
 
@@ -63,7 +78,10 @@ public class QueryImpl<T> implements Query<T> {
         }
 
         return toBuilder()
-                .postClauses(CollectionUtils.safeCopyAsImmutableList(postClauses, join))
+                .postClauses(ImmutableList.<Clause>builder()
+                                     .addAll(postClauses)
+                                     .add(join)
+                                     .build())
                 .tableObjectMap(ImmutableMap.<String, TableObject>builder()
                                         .putAll(tableObjectMap)
                                         .put(join.getAlias(), join)
@@ -121,7 +139,10 @@ public class QueryImpl<T> implements Query<T> {
         }
 
         return toBuilder()
-                .selectFields(CollectionUtils.safeCopyAsImmutableList(selectFields, fields))
+                .selectFields(ImmutableList.<String>builder()
+                                      .addAll(selectFields)
+                                      .add(fields)
+                                      .build())
                 .build();
     }
 
@@ -132,35 +153,35 @@ public class QueryImpl<T> implements Query<T> {
 
     @Override
     public Query<T> innerJoin(@NonNull String objectField, @NonNull String alias) {
-        return join(new ObjectFieldJoin(JoinType.INNER, objectField, alias, false));
+        return join(new ObjectFieldJoin(JoinType.INNER, objectField, alias));
     }
 
     @Override
     public Query<T> innerJoinFetch(@NonNull String objectField, @NonNull String alias,
-                                   @NonNull String... fetchFields) {
-        return join(new ObjectFieldJoin(JoinType.INNER, objectField, alias, true, fetchFields));
+                                   @NonNull String... fetchColumns) {
+        return join(new ObjectFieldJoinFetch(JoinType.INNER, objectField, alias, fetchColumns));
     }
 
     @Override
     public Query<T> leftOuterJoin(@NonNull String objectField, @NonNull String alias) {
-        return join(new ObjectFieldJoin(JoinType.LEFT_OUTER, objectField, alias, false));
+        return join(new ObjectFieldJoin(JoinType.LEFT_OUTER, objectField, alias));
     }
 
     @Override
     public Query<T> leftOuterJoinFetch(@NonNull String objectField, @NonNull String alias,
-                                       @NonNull String... fetchFields) {
-        return join(new ObjectFieldJoin(JoinType.LEFT_OUTER, objectField, alias, true, fetchFields));
+                                       @NonNull String... fetchColumns) {
+        return join(new ObjectFieldJoinFetch(JoinType.LEFT_OUTER, objectField, alias, fetchColumns));
     }
 
     @Override
     public Query<T> rightOuterJoin(@NonNull String objectField, @NonNull String alias) {
-        return join(new ObjectFieldJoin(JoinType.RIGHT_OUTER, objectField, alias, false));
+        return join(new ObjectFieldJoin(JoinType.RIGHT_OUTER, objectField, alias));
     }
 
     @Override
     public Query<T> rightOuterJoinFetch(@NonNull String objectField, @NonNull String alias,
-                                        @NonNull String... fetchFields) {
-        return join(new ObjectFieldJoin(JoinType.RIGHT_OUTER, objectField, alias, true, fetchFields));
+                                        @NonNull String... fetchColumns) {
+        return join(new ObjectFieldJoinFetch(JoinType.RIGHT_OUTER, objectField, alias, fetchColumns));
     }
 
     @Override
