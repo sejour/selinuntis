@@ -4,16 +4,21 @@ import java.util.function.Function;
 
 import github.sejour.selinutis.core.StatementBuilder;
 import github.sejour.selinutis.core.error.StatementBuildException;
+import github.sejour.selinutis.core.statement.clause.Join;
+import github.sejour.selinutis.core.statement.clause.PostSelectClause;
+import github.sejour.selinutis.core.statement.clause.PreSelectClause;
 import github.sejour.selinutis.core.statement.expression.OrderExpression;
 import github.sejour.selinutis.core.statement.expression.WhereExpression;
 
 public interface Query<T> {
+    Query<T> preSelect(PreSelectClause clause);
     Query<T> preSelect(String clause);
+    Query<T> postSelect(PostSelectClause clause);
     Query<T> postSelect(String clause);
-    Query<T> with(String expression);
     Query<T> distinct();
     Query<T> select(String... fields);
     Query<T> count();
+    Query<T> join(Join join);
     Query<T> innerJoin(String objectField, String alias);
     Query<T> innerJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> leftOuterJoin(String objectField, String alias);

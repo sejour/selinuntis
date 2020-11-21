@@ -5,18 +5,17 @@ import static java.lang.String.join;
 
 import org.apache.commons.lang3.StringUtils;
 
-import github.sejour.selinutis.core.statement.Keyword;
-
 import lombok.Getter;
+import lombok.NonNull;
 
 @Getter
-public class ObjectFieldJoin implements Join, TableObject {
+public class ObjectFieldJoin extends Join {
     private final JoinType type;
     private final String parentObjectAlias;
     private final String fieldName;
     private final String alias;
 
-    public ObjectFieldJoin(JoinType type, String objectField, String alias) {
+    public ObjectFieldJoin(@NonNull JoinType type, @NonNull String objectField, String alias) {
         if (StringUtils.isBlank(objectField)) {
             throw new IllegalArgumentException("objectField must not be blank");
         }
@@ -44,11 +43,6 @@ public class ObjectFieldJoin implements Join, TableObject {
             default -> throw new IllegalArgumentException(format("invalid format of object field: %s",
                                                                  objectField));
         }
-    }
-
-    @Override
-    public Keyword getKeyword() {
-        return Keyword.JOIN;
     }
 
     public String getCompletedKeyword() {

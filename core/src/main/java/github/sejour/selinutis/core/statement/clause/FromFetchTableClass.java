@@ -10,12 +10,14 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 @Getter
 public class FromFetchTableClass extends FromTableClass implements FetchTableObject {
     private final List<String> fetchColumns;
 
-    public FromFetchTableClass(Class<?> tableClass, String alias, String... columns) {
+    public FromFetchTableClass(@NonNull Class<?> tableClass, @NonNull String alias,
+                               @NonNull String... columns) {
         super(tableClass, alias);
 
         fetchColumns = StringUtils.isEmpty(alias)

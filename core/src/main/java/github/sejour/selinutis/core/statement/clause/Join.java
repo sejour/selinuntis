@@ -1,4 +1,9 @@
 package github.sejour.selinutis.core.statement.clause;
 
-public interface Join extends Clause {
+import github.sejour.selinutis.core.statement.Keyword;
+
+public abstract class Join implements Clause, TableObject {
+    public Keyword getKeyword() {
+        return Keyword.JOIN;
+    }
 }

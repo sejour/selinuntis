@@ -22,6 +22,7 @@ import github.sejour.selinutis.core.statement.Query;
 import github.sejour.selinutis.core.statement.QueryImpl;
 import github.sejour.selinutis.core.statement.Statement;
 import github.sejour.selinutis.core.statement.clause.Clause;
+import github.sejour.selinutis.core.statement.clause.FetchTableObject;
 import github.sejour.selinutis.core.statement.clause.From;
 import github.sejour.selinutis.core.statement.clause.FromTableClass;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
@@ -110,7 +111,6 @@ public class StatementBuilderImpl implements StatementBuilder {
             throws StatementBuildException {
         ObjectInfo objectInfo = null;
 
-        // TODO: FetchObjectInfo
         if (node.object instanceof FromTableClass) {
             final var from = (FromTableClass) node.object;
             final var tableInfo = Optional
@@ -118,7 +118,12 @@ public class StatementBuilderImpl implements StatementBuilder {
                     .orElseThrow(() -> new StatementBuildException(
                             format("table class used in from is not registered: %s",
                                    from.getTableClass().getName())));
-            objectInfo = new FromTableObjectInfo(from.getAlias(), tableInfo);
+            if (from instanceof FetchTableObject) {
+                objectInfo = new FromFetchObjectInfo(from.getAlias(), tableInfo,
+                                                     ((FetchTableObject) from).getFetchColumns());
+            } else {
+                objectInfo = new FromObjectInfo(from.getAlias(), tableInfo);
+            }
         } else if (node.object instanceof ObjectFieldJoin) {
             final var join = (ObjectFieldJoin) node.object;
             final var joinField = parent
@@ -132,7 +137,12 @@ public class StatementBuilderImpl implements StatementBuilder {
                     .orElseThrow(() -> new StatementBuildException(
                             format("table class used in join is not supported: %s",
                                    joinField.getTableClass())));
-            objectInfo = new JoinObjectInfo(join, tableInfo, joinField);
+            if (join instanceof FetchTableObject) {
+                objectInfo = new JoinFetchObjectInfo(join, tableInfo, joinField,
+                                                     ((FetchTableObject) join).getFetchColumns());
+            } else {
+                objectInfo = new JoinObjectInfo(join, tableInfo, joinField);
+            }
         }
 
         if (objectInfo == null) {

@@ -13,11 +13,19 @@ import github.sejour.selinutis.core.StatementBuilder;
 import github.sejour.selinutis.core.error.StatementBuildException;
 import github.sejour.selinutis.core.statement.clause.Clause;
 import github.sejour.selinutis.core.statement.clause.From;
+import github.sejour.selinutis.core.statement.clause.GroupBy;
+import github.sejour.selinutis.core.statement.clause.Having;
+import github.sejour.selinutis.core.statement.clause.Join;
 import github.sejour.selinutis.core.statement.clause.JoinType;
+import github.sejour.selinutis.core.statement.clause.Limit;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoinFetch;
+import github.sejour.selinutis.core.statement.clause.OrderBy;
 import github.sejour.selinutis.core.statement.clause.PlainClause;
+import github.sejour.selinutis.core.statement.clause.PostSelectClause;
+import github.sejour.selinutis.core.statement.clause.PreSelectClause;
 import github.sejour.selinutis.core.statement.clause.TableObject;
+import github.sejour.selinutis.core.statement.clause.Where;
 import github.sejour.selinutis.core.statement.expression.OrderExpression;
 import github.sejour.selinutis.core.statement.expression.WhereExpression;
 
@@ -34,7 +42,6 @@ public class QueryImpl<T> implements Query<T> {
     boolean distinct;
     List<String> selectFields;
     List<Clause> postClauses;
-    Long limit; // TODO: clauseに含める
 
     public static <T> QueryImpl<T> from(@NonNull From tableClass) {
         return QueryImpl
@@ -49,11 +56,14 @@ public class QueryImpl<T> implements Query<T> {
                 .postClauses(ImmutableList.<Clause>builder()
                                      .add(tableClass)
                                      .build())
-                .limit(null)
                 .build();
     }
 
-    protected Query<T> preSelect(PlainClause clause) {
+    public Query<T> preSelect(PreSelectClause clause) {
+        if (clause == null) {
+            return this;
+        }
+
         return toBuilder()
                 .preClauses(ImmutableList.<Clause>builder()
                                     .addAll(preClauses)
@@ -62,7 +72,11 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
-    protected Query<T> postSelect(PlainClause clause) {
+    public Query<T> postSelect(PostSelectClause clause) {
+        if (clause == null) {
+            return this;
+        }
+
         return toBuilder()
                 .postClauses(ImmutableList.<Clause>builder()
                                      .addAll(postClauses)
@@ -71,7 +85,10 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
-    protected Query<T> join(ObjectFieldJoin join) {
+    public Query<T> join(Join join) {
+        if (join == null) {
+            return this;
+        }
         if (tableObjectMap.containsKey(join.getAlias())) {
             throw new IllegalArgumentException(format("duplicate alias of join field: %s",
                                                       join.getAlias()));
@@ -95,10 +112,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return preSelect(PlainClause.builder()
-                                    .keyword(Keyword.NONE)
-                                    .expression(clause)
-                                    .build());
+        return preSelect(new PlainClause(clause));
     }
 
     @Override
@@ -107,22 +121,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.NONE)
-                                     .expression(clause)
-                                     .build());
-    }
-
-    @Override
-    public Query<T> with(String expression) {
-        if (expression == null) {
-            return this;
-        }
-
-        return preSelect(PlainClause.builder()
-                                    .keyword(Keyword.WITH)
-                                    .expression(expression)
-                                    .build());
+        return postSelect(new PlainClause(clause));
     }
 
     @Override
@@ -190,10 +189,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.WHERE)
-                                     .expression(expression)
-                                     .build());
+        return postSelect(new Where(expression));
     }
 
     @Override
@@ -202,10 +198,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.WHERE)
-                                     .expression(expression.getExpression())
-                                     .build());
+        return postSelect(new Where(expression));
     }
 
     @Override
@@ -214,10 +207,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.ORDER_BY)
-                                     .expression(expression)
-                                     .build());
+        return postSelect(new GroupBy(expression));
     }
 
     @Override
@@ -226,10 +216,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.HAVING)
-                                     .expression(expression)
-                                     .build());
+        return postSelect(new Having(expression));
     }
 
     @Override
@@ -238,10 +225,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.HAVING)
-                                     .expression(expression.getExpression())
-                                     .build());
+        return postSelect(new Having(expression));
     }
 
     @Override
@@ -250,10 +234,7 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.ORDER_BY)
-                                     .expression(expression)
-                                     .build());
+        return postSelect(new OrderBy(expression));
     }
 
     @Override
@@ -262,17 +243,16 @@ public class QueryImpl<T> implements Query<T> {
             return this;
         }
 
-        return postSelect(PlainClause.builder()
-                                     .keyword(Keyword.WHERE)
-                                     .expression(expression.getExpression())
-                                     .build());
+        return postSelect(new OrderBy(expression));
     }
 
     @Override
     public Query<T> limit(Long size) {
-        return toBuilder()
-                .limit(size)
-                .build();
+        if (size == null) {
+            return this;
+        }
+
+        return postSelect(new Limit(size));
     }
 
     @Override
