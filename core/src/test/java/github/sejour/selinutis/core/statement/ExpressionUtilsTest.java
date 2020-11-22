@@ -11,6 +11,4 @@ public class ExpressionUtilsTest {
     public void testClause() {
         assertThat(ExpressionUtils.factor("test-expression")).isEqualTo("(test-expression)");
     }
-
-
 }

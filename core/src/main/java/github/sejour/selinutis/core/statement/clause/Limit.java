@@ -5,7 +5,7 @@ import github.sejour.selinutis.core.statement.Keyword;
 import lombok.Value;
 
 @Value
-public class Limit implements PostSelectClause, StringExpressionClause, UniqueKeywordClause {
+public class Limit implements PostSelectClause, StringExpressionClause {
     String expression;
 
     public Limit(long limit) {

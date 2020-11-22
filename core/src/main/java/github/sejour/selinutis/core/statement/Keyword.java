@@ -14,7 +14,8 @@ public enum Keyword {
     GROUP_BY("GROUP BY"),
     HAVING("HAVING"),
     ORDER_BY("ORDER BY"),
-    LIMIT("LIMIT");
+    LIMIT("LIMIT"),
+    OFFSET("OFFSET");
 
     @Getter
     final String clause;

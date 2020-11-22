@@ -1,5 +1,6 @@
 package github.sejour.selinutis.core.statement;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 import github.sejour.selinutis.core.StatementBuilder;
@@ -33,9 +34,11 @@ public interface Query<T> {
     Query<T> orderBy(String expression);
     Query<T> orderBy(OrderExpression expression);
     Query<T> limit(Long limit);
+    Query<T> offset(Long offset);
 
     default Query<T> query(Function<Query<T>, Query<T>> f) {
-        return f.apply(this);
+        return Optional.ofNullable(f.apply(this))
+                       .orElse(this);
     }
 
     Statement build(StatementBuilder builder) throws StatementBuildException;

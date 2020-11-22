@@ -4,12 +4,10 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-@Builder
 @Getter
 public class JoinField {
     private static final String TARGET_TABLE = "{0}";
@@ -20,7 +18,7 @@ public class JoinField {
     private final Field field;
     private final Class<?> fieldClass;
     private final Class<?> tableClass;
-    private boolean toMany;
+    private final boolean toMany;
 
     public String formatJoinExpression(String targetTable,
                                        String targetTableAlias,

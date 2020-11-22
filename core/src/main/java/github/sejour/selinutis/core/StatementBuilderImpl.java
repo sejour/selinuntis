@@ -26,6 +26,7 @@ import github.sejour.selinutis.core.statement.clause.FetchTableObject;
 import github.sejour.selinutis.core.statement.clause.From;
 import github.sejour.selinutis.core.statement.clause.FromTableClass;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
+import github.sejour.selinutis.core.statement.clause.StringExpressionClause;
 import github.sejour.selinutis.core.statement.clause.TableObject;
 
 import lombok.NonNull;
@@ -181,9 +182,33 @@ public class StatementBuilderImpl implements StatementBuilder {
     }
 
     private static String buildClause(List<Clause> sequence,
-                                      Map<String, ObjectInfo> objectInfoMap) {
-        // TODO: impl
-        return null;
+                                      Map<String, ObjectInfo> objectInfoMap) throws StatementBuildException {
+        final var builder = new StringBuilder();
+
+        for (final var clause: sequence) {
+            String str = null;
+            if (clause instanceof TableObject) {
+                final var tableObject = (TableObject) clause;
+                str = Optional.ofNullable(objectInfoMap.get(tableObject.getAlias()))
+                              .map(ObjectInfo::getClause)
+                              .orElseThrow(() -> new StatementBuildException(
+                                      format("object info not found, alias: %s",
+                                             tableObject.getAlias())));
+            } else if (clause instanceof StringExpressionClause) {
+                str = ((StringExpressionClause) clause).getExpression();
+            }
+
+            if (str == null) {
+                throw new StatementBuildException(format("not supported clause: %s, keyword: %s",
+                                                         clause.getClass().getName(),
+                                                         clause.getKeyword().getClause()));
+            }
+
+            builder.append(' ')
+                   .append(str);
+        }
+
+        return builder.toString();
     }
 }
 

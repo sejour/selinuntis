@@ -20,6 +20,7 @@ import github.sejour.selinutis.core.statement.clause.JoinType;
 import github.sejour.selinutis.core.statement.clause.Limit;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoin;
 import github.sejour.selinutis.core.statement.clause.ObjectFieldJoinFetch;
+import github.sejour.selinutis.core.statement.clause.Offset;
 import github.sejour.selinutis.core.statement.clause.OrderBy;
 import github.sejour.selinutis.core.statement.clause.PlainClause;
 import github.sejour.selinutis.core.statement.clause.PostSelectClause;
@@ -59,6 +60,7 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
+    @Override
     public Query<T> preSelect(PreSelectClause clause) {
         if (clause == null) {
             return this;
@@ -72,6 +74,7 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
+    @Override
     public Query<T> postSelect(PostSelectClause clause) {
         if (clause == null) {
             return this;
@@ -85,6 +88,7 @@ public class QueryImpl<T> implements Query<T> {
                 .build();
     }
 
+    @Override
     public Query<T> join(Join join) {
         if (join == null) {
             return this;
@@ -253,6 +257,15 @@ public class QueryImpl<T> implements Query<T> {
         }
 
         return postSelect(new Limit(size));
+    }
+
+    @Override
+    public Query<T> offset(Long offset) {
+        if (offset == null) {
+            return this;
+        }
+
+        return postSelect(new Offset(offset));
     }
 
     @Override
