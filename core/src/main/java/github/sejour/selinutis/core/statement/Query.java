@@ -8,8 +8,8 @@ import github.sejour.selinutis.core.error.StatementBuildException;
 import github.sejour.selinutis.core.statement.clause.Join;
 import github.sejour.selinutis.core.statement.clause.PostSelectClause;
 import github.sejour.selinutis.core.statement.clause.PreSelectClause;
-import github.sejour.selinutis.core.statement.expression.OrderExpression;
-import github.sejour.selinutis.core.statement.expression.WhereExpression;
+import github.sejour.selinutis.core.statement.expression.OrderChain;
+import github.sejour.selinutis.core.statement.expression.WhereChain;
 
 public interface Query<T> {
     Query<T> preSelect(PreSelectClause clause);
@@ -27,17 +27,18 @@ public interface Query<T> {
     Query<T> rightOuterJoin(String objectField, String alias);
     Query<T> rightOuterJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> where(String expression);
-    Query<T> where(WhereExpression expression);
+    Query<T> where(Function<WhereChain, WhereChain> where);
     Query<T> groupBy(String expression);
     Query<T> having(String expression);
-    Query<T> having(WhereExpression expression);
+    Query<T> having(Function<WhereChain, WhereChain> having);
     Query<T> orderBy(String expression);
-    Query<T> orderBy(OrderExpression expression);
+    Query<T> orderBy(Function<OrderChain, OrderChain> order);
     Query<T> limit(Long limit);
     Query<T> offset(Long offset);
 
     default Query<T> query(Function<Query<T>, Query<T>> f) {
-        return Optional.ofNullable(f.apply(this))
+        return Optional.ofNullable(f)
+                       .flatMap(ff -> Optional.ofNullable(ff.apply(this)))
                        .orElse(this);
     }
 

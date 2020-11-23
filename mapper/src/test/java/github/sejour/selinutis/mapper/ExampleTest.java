@@ -31,10 +31,18 @@ public class ExampleTest {
         final Mapper mapper;
 
         @QueryCache
-        public QueryExecution<Example> findById(@Param Long id) {
+        public QueryExecution<Example> find(@Param String url, @Param String name, @Param String title) {
+            // TODO: Function<WhereChain, WhereChain> をやめて WhereChain を受け取る
+            // TODO: .and(name != null, "name = #{name}") こう書けた方が嬉しいかも
             return mapper.select(
                     from(Example.class)
-                            .where("id = #{id}"));
+                            .where(where -> where
+                                    .and("url = #{url}")
+                                    .or(where1 -> where1
+                                            .and(() -> name != null, () -> "name = #{name}")
+                                            .and(() -> title != null, () -> "title = #{title*")))
+                            .orderBy(order -> order
+                                    .asc("id")));
         }
     }
 
@@ -47,7 +55,7 @@ public class ExampleTest {
 
     @Test
     public void test() {
-        final Example result = exampleRepository.findById(123L).execute();
+        final Example result = exampleRepository.find("", "", "").execute();
         // TODO
     }
 

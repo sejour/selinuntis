@@ -4,27 +4,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
-import github.sejour.selinutis.core.statement.expression.OrderField;
+import github.sejour.selinutis.core.statement.expression.OrderChain;
 
-public class OrderFieldExampleTest {
+public class OrderChainExampleTest {
     @Test
     public void testOrderByAsc() {
-        final OrderField order1 = OrderField.By
+        final OrderChain order1 = OrderChain
+                .create()
                 .asc("aaa")
                 .desc("bbb")
                 .desc("ccc")
                 .asc("ddd");
         assertThat(order1.getExpression()).isEqualTo("aaa ASC,bbb DESC,ccc DESC,ddd ASC");
 
-        final OrderField order2 = OrderField.By
+        final OrderChain order2 = OrderChain
+                .create()
                 .desc("aaa")
                 .desc("bbb")
                 .asc("ccc")
                 .asc("ddd");
         assertThat(order2.getExpression()).isEqualTo("aaa DESC,bbb DESC,ccc ASC,ddd ASC");
 
-        final OrderField order3 = OrderField
-                .by(o -> o.asc(">aaa")
+        final OrderChain order3 = OrderChain
+                .create()
+                .order(o -> o.asc(">aaa")
                           .desc(">bbb")
                           .order(oo -> oo.desc(">>aaa")
                                          .asc(">>bbb"))
@@ -39,8 +42,9 @@ public class OrderFieldExampleTest {
         assertThat(order3.getExpression())
                 .isEqualTo(">aaa ASC,>bbb DESC,>>aaa DESC,>>bbb ASC,>ccc ASC,bbb DESC,!aaa ASC,!!aaa ASC,!!bbb DESC,!bbb DESC,ccc DESC,ddd ASC");
 
-        final OrderField order4 = OrderField
-                .by(o -> o);
+        final OrderChain order4 = OrderChain
+                .create()
+                .order(o -> o);
         assertThat(order4.getExpression()).isNull();
     }
 }

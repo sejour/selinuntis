@@ -1,10 +1,13 @@
 package github.sejour.selinutis.core.statement;
 
+import static github.sejour.selinutis.core.utils.CollectionUtils.excludeNullValues;
 import static java.lang.String.format;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -27,8 +30,8 @@ import github.sejour.selinutis.core.statement.clause.PostSelectClause;
 import github.sejour.selinutis.core.statement.clause.PreSelectClause;
 import github.sejour.selinutis.core.statement.clause.TableObject;
 import github.sejour.selinutis.core.statement.clause.Where;
-import github.sejour.selinutis.core.statement.expression.OrderExpression;
-import github.sejour.selinutis.core.statement.expression.WhereExpression;
+import github.sejour.selinutis.core.statement.expression.OrderChain;
+import github.sejour.selinutis.core.statement.expression.WhereChain;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -62,70 +65,64 @@ public class QueryImpl<T> implements Query<T> {
 
     @Override
     public Query<T> preSelect(PreSelectClause clause) {
-        if (clause == null) {
-            return this;
-        }
-
-        return toBuilder()
-                .preClauses(ImmutableList.<Clause>builder()
-                                    .addAll(preClauses)
-                                    .add(clause)
-                                    .build())
-                .build();
+        return Optional.ofNullable(clause)
+                       .map(one -> toBuilder()
+                               .preClauses(ImmutableList.<Clause>builder()
+                                                   .addAll(preClauses)
+                                                   .add(one)
+                                                   .build())
+                               .build())
+                       .orElse(this);
     }
 
     @Override
     public Query<T> postSelect(PostSelectClause clause) {
-        if (clause == null) {
-            return this;
-        }
-
-        return toBuilder()
-                .postClauses(ImmutableList.<Clause>builder()
-                                     .addAll(postClauses)
-                                     .add(clause)
-                                     .build())
-                .build();
+        return Optional.ofNullable(clause)
+                       .map(one -> toBuilder()
+                               .postClauses(ImmutableList.<Clause>builder()
+                                                    .addAll(postClauses)
+                                                    .add(one)
+                                                    .build())
+                               .build())
+                       .orElse(this);
     }
 
     @Override
     public Query<T> join(Join join) {
-        if (join == null) {
-            return this;
-        }
-        if (tableObjectMap.containsKey(join.getAlias())) {
-            throw new IllegalArgumentException(format("duplicate alias of join field: %s",
-                                                      join.getAlias()));
-        }
+        return Optional
+                .ofNullable(join)
+                .map(one -> {
+                    if (tableObjectMap.containsKey(one.getAlias())) {
+                        throw new IllegalArgumentException(format("duplicate alias of join field: %s",
+                                                                  one.getAlias()));
+                    }
 
-        return toBuilder()
-                .postClauses(ImmutableList.<Clause>builder()
-                                     .addAll(postClauses)
-                                     .add(join)
-                                     .build())
-                .tableObjectMap(ImmutableMap.<String, TableObject>builder()
-                                        .putAll(tableObjectMap)
-                                        .put(join.getAlias(), join)
-                                        .build())
-                .build();
+                    return toBuilder()
+                            .postClauses(ImmutableList.<Clause>builder()
+                                                 .addAll(postClauses)
+                                                 .add(one)
+                                                 .build())
+                            .tableObjectMap(ImmutableMap.<String, TableObject>builder()
+                                                    .putAll(tableObjectMap)
+                                                    .put(one.getAlias(), one)
+                                                    .build())
+                            .build();
+                })
+                .orElse(this);
     }
 
     @Override
     public Query<T> preSelect(String clause) {
-        if (clause == null) {
-            return this;
-        }
-
-        return preSelect(new PlainClause(clause));
+        return Optional.ofNullable(clause)
+                       .map(one -> preSelect(new PlainClause(one)))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> postSelect(String clause) {
-        if (clause == null) {
-            return this;
-        }
-
-        return postSelect(new PlainClause(clause));
+        return Optional.ofNullable(clause)
+                       .map(one -> postSelect(new PlainClause(one)))
+                       .orElse(this);
     }
 
     @Override
@@ -137,14 +134,10 @@ public class QueryImpl<T> implements Query<T> {
 
     @Override
     public Query<T> select(String... fields) {
-        if (fields == null) {
-            return this;
-        }
-
         return toBuilder()
                 .selectFields(ImmutableList.<String>builder()
                                       .addAll(selectFields)
-                                      .add(fields)
+                                      .addAll(excludeNullValues(fields))
                                       .build())
                 .build();
     }
@@ -189,83 +182,68 @@ public class QueryImpl<T> implements Query<T> {
 
     @Override
     public Query<T> where(String expression) {
-        if (expression == null) {
-            return this;
-        }
-
-        return postSelect(new Where(expression));
+        return Optional.ofNullable(expression)
+                       .map(exp -> postSelect(new Where(expression)))
+                       .orElse(this);
     }
 
     @Override
-    public Query<T> where(WhereExpression expression) {
-        if (expression == null || expression.getExpression() == null) {
-            return this;
-        }
-
-        return postSelect(new Where(expression));
+    public Query<T> where(Function<WhereChain, WhereChain> where) {
+        return Optional.ofNullable(where)
+                       .flatMap(wh -> Optional.ofNullable(wh.apply(WhereChain.create())))
+                       .map(wh -> postSelect(new Where(wh.getExpression())))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> groupBy(String expression) {
-        if (expression == null) {
-            return this;
-        }
-
-        return postSelect(new GroupBy(expression));
+        return Optional.ofNullable(expression)
+                       .map(exp -> postSelect(new GroupBy(expression)))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> having(String expression) {
-        if (expression == null) {
-            return this;
-        }
-
-        return postSelect(new Having(expression));
+        return Optional.ofNullable(expression)
+                       .map(exp -> postSelect(new Having(expression)))
+                       .orElse(this);
     }
 
     @Override
-    public Query<T> having(WhereExpression expression) {
-        if (expression == null || expression.getExpression() == null) {
-            return this;
-        }
-
-        return postSelect(new Having(expression));
+    public Query<T> having(Function<WhereChain, WhereChain> having) {
+        return Optional.ofNullable(having)
+                       .flatMap(hv -> Optional.ofNullable(hv.apply(WhereChain.create())))
+                       .map(wh -> postSelect(new Having(wh.getExpression())))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> orderBy(String expression) {
-        if (expression == null) {
-            return this;
-        }
-
-        return postSelect(new OrderBy(expression));
+        return Optional.ofNullable(expression)
+                       .map(exp -> postSelect(new OrderBy(expression)))
+                       .orElse(this);
     }
 
     @Override
-    public Query<T> orderBy(OrderExpression expression) {
-        if (expression == null || expression.getExpression() == null) {
-            return this;
-        }
-
-        return postSelect(new OrderBy(expression));
+    public Query<T> orderBy(Function<OrderChain, OrderChain> order) {
+        return Optional.ofNullable(order)
+                       .flatMap(o -> Optional.ofNullable(o.apply(OrderChain.create())))
+                       .map(o -> postSelect(new OrderBy(o.getExpression())))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> limit(Long size) {
-        if (size == null) {
-            return this;
-        }
-
-        return postSelect(new Limit(size));
+        return Optional.ofNullable(size)
+                       .map(s -> postSelect(new Limit(size)))
+                       .orElse(this);
     }
 
     @Override
     public Query<T> offset(Long offset) {
-        if (offset == null) {
-            return this;
-        }
-
-        return postSelect(new Offset(offset));
+        return Optional.ofNullable(offset)
+                       .map(o -> postSelect(new Offset(o)))
+                       .orElse(this);
     }
 
     @Override
