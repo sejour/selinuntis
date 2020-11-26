@@ -9,7 +9,7 @@ import github.sejour.selinutis.core.statement.clause.Join;
 import github.sejour.selinutis.core.statement.clause.PostSelectClause;
 import github.sejour.selinutis.core.statement.clause.PreSelectClause;
 import github.sejour.selinutis.core.statement.expression.OrderChain;
-import github.sejour.selinutis.core.statement.expression.WhereChain;
+import github.sejour.selinutis.core.statement.expression.ConditionChain;
 
 public interface Query<T> {
     Query<T> preSelect(PreSelectClause clause);
@@ -27,12 +27,12 @@ public interface Query<T> {
     Query<T> rightOuterJoin(String objectField, String alias);
     Query<T> rightOuterJoinFetch(String objectField, String alias, String... fetchColumns);
     Query<T> where(String expression);
-    Query<T> where(Function<WhereChain, WhereChain> where);
+    Query<T> where(ConditionChain chain);
     Query<T> groupBy(String expression);
     Query<T> having(String expression);
-    Query<T> having(Function<WhereChain, WhereChain> having);
+    Query<T> having(ConditionChain chain);
     Query<T> orderBy(String expression);
-    Query<T> orderBy(Function<OrderChain, OrderChain> order);
+    Query<T> orderBy(OrderChain chain);
     Query<T> limit(Long limit);
     Query<T> offset(Long offset);
 

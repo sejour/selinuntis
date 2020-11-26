@@ -1,6 +1,8 @@
 package github.sejour.selinutis.mapper;
 
 import static github.sejour.selinutis.core.statement.Select.from;
+import static github.sejour.selinutis.core.statement.expression.Chains.asc;
+import static github.sejour.selinutis.core.statement.expression.Chains.condition;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -32,17 +34,12 @@ public class ExampleTest {
 
         @QueryCache
         public QueryExecution<Example> find(@Param String url, @Param String name, @Param String title) {
-            // TODO: Function<WhereChain, WhereChain> をやめて WhereChain を受け取る
-            // TODO: .and(name != null, "name = #{name}") こう書けた方が嬉しいかも
             return mapper.select(
                     from(Example.class)
-                            .where(where -> where
-                                    .and("url = #{url}")
-                                    .or(where1 -> where1
-                                            .and(() -> name != null, () -> "name = #{name}")
-                                            .and(() -> title != null, () -> "title = #{title*")))
-                            .orderBy(order -> order
-                                    .asc("id")));
+                            .where(condition("url = #{url}")
+                                           .or(condition(name != null, "name = #{name}")
+                                                       .and(title != null, "title = #{title*")))
+                            .orderBy(asc("id")));
         }
     }
 

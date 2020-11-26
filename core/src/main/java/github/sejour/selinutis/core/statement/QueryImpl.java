@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,7 +30,7 @@ import github.sejour.selinutis.core.statement.clause.PreSelectClause;
 import github.sejour.selinutis.core.statement.clause.TableObject;
 import github.sejour.selinutis.core.statement.clause.Where;
 import github.sejour.selinutis.core.statement.expression.OrderChain;
-import github.sejour.selinutis.core.statement.expression.WhereChain;
+import github.sejour.selinutis.core.statement.expression.ConditionChain;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -188,10 +187,10 @@ public class QueryImpl<T> implements Query<T> {
     }
 
     @Override
-    public Query<T> where(Function<WhereChain, WhereChain> where) {
-        return Optional.ofNullable(where)
-                       .flatMap(wh -> Optional.ofNullable(wh.apply(WhereChain.create())))
-                       .map(wh -> postSelect(new Where(wh.getExpression())))
+    public Query<T> where(ConditionChain chain) {
+        return Optional.ofNullable(chain)
+                       .flatMap(ch -> Optional.ofNullable(ch.getExpression()))
+                       .map(exp -> postSelect(new Where(exp)))
                        .orElse(this);
     }
 
@@ -210,10 +209,10 @@ public class QueryImpl<T> implements Query<T> {
     }
 
     @Override
-    public Query<T> having(Function<WhereChain, WhereChain> having) {
-        return Optional.ofNullable(having)
-                       .flatMap(hv -> Optional.ofNullable(hv.apply(WhereChain.create())))
-                       .map(wh -> postSelect(new Having(wh.getExpression())))
+    public Query<T> having(ConditionChain chain) {
+        return Optional.ofNullable(chain)
+                       .flatMap(ch -> Optional.ofNullable(ch.getExpression()))
+                       .map(exp -> postSelect(new Having(exp)))
                        .orElse(this);
     }
 
@@ -225,10 +224,10 @@ public class QueryImpl<T> implements Query<T> {
     }
 
     @Override
-    public Query<T> orderBy(Function<OrderChain, OrderChain> order) {
-        return Optional.ofNullable(order)
-                       .flatMap(o -> Optional.ofNullable(o.apply(OrderChain.create())))
-                       .map(o -> postSelect(new OrderBy(o.getExpression())))
+    public Query<T> orderBy(OrderChain chain) {
+        return Optional.ofNullable(chain)
+                       .flatMap(ch -> Optional.ofNullable(ch.getExpression()))
+                       .map(exp -> postSelect(new OrderBy(exp)))
                        .orElse(this);
     }
 
