@@ -3,6 +3,7 @@ package github.sejour.selinuntis.core;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -23,5 +24,9 @@ public class TableInfo {
 
     public Optional<JoinField> getJoinField(String fieldName) {
         return Optional.ofNullable(joinFields.get(fieldName));
+    }
+
+    public Set<String> getColumnNames() {
+        return columns.keySet();
     }
 }

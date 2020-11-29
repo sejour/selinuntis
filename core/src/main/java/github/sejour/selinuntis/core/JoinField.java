@@ -14,6 +14,7 @@ public class JoinField {
     private static final String TARGET_TABLE_ALIAS = "{1}";
     private static final String PARENT_TABLE_ALIAS = "{2}";
 
+    // FIXME: MessageFormat is not thread safe
     private final MessageFormat expressionTemplate;
     private final Field field;
     private final Class<?> fieldClass;

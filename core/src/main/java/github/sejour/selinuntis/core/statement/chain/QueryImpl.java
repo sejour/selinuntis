@@ -6,9 +6,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import github.sejour.selinuntis.core.error.StatementBuildException;
 import github.sejour.selinuntis.core.statement.Statement;
@@ -42,7 +44,7 @@ public class QueryImpl<T> implements Query<T> {
     String fromObjectAlias;
     List<Clause> preClauses;
     boolean distinct;
-    List<String> selectFields;
+    Set<String> selectFields;
     List<Clause> postClauses;
 
     public static <T> QueryImpl<T> from(@NonNull From tableClass) {
@@ -54,7 +56,7 @@ public class QueryImpl<T> implements Query<T> {
                 .fromObjectAlias(tableClass.getAlias())
                 .preClauses(Collections.emptyList())
                 .distinct(false)
-                .selectFields(Collections.emptyList())
+                .selectFields(Collections.emptySet())
                 .postClauses(ImmutableList.<Clause>builder()
                                      .add(tableClass)
                                      .build())
@@ -133,7 +135,7 @@ public class QueryImpl<T> implements Query<T> {
     @Override
     public Query<T> select(String... fields) {
         return toBuilder()
-                .selectFields(ImmutableList.<String>builder()
+                .selectFields(ImmutableSet.<String>builder()
                                       .addAll(selectFields)
                                       .addAll(CollectionUtils.excludeNullValues(fields))
                                       .build())

@@ -1,8 +1,10 @@
 package github.sejour.selinuntis.core;
 
-import static java.lang.String.join;
+import static github.sejour.selinuntis.core.FetchObjectInfoSupport.createFetchColumns;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import github.sejour.selinuntis.core.statement.clause.ObjectFieldJoin;
 
@@ -11,14 +13,24 @@ import lombok.NonNull;
 
 @Getter
 public class JoinFetchObjectInfo extends JoinObjectInfo implements FetchObjectInfo {
-    private final List<String> fetchColumns;
-    private final String fetchColumnsString;
+    private final String selectFieldsString;
+    private final Map<String, String> fetchColumnNameMap;
 
     public JoinFetchObjectInfo(@NonNull ObjectFieldJoin join,
                                @NonNull TableInfo info, @NonNull JoinField field,
-                               @NonNull List<String> fetchColumns) {
+                               @NonNull Set<String> fetchColumns,
+                               String fetchColumnsAliasFormat) {
         super(join, info, field);
-        this.fetchColumns = fetchColumns;
-        fetchColumnsString = join(",", fetchColumns);
+
+        final var columns = createFetchColumns(
+                join.getAlias(), info, fetchColumns, fetchColumnsAliasFormat);
+        selectFieldsString = columns
+                .stream()
+                .map(FetchObjectInfoSupport.FetchColumn::getDefinition)
+                .collect(Collectors.joining(","));
+        fetchColumnNameMap = columns
+                .stream()
+                .collect(Collectors.toMap(FetchObjectInfoSupport.FetchColumn::getLabel,
+                                          FetchObjectInfoSupport.FetchColumn::getName));
     }
 }

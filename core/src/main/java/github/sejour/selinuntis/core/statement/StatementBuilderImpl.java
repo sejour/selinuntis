@@ -1,7 +1,6 @@
 package github.sejour.selinuntis.core.statement;
 
 import static java.lang.String.format;
-import static java.lang.String.join;
 
 import java.util.HashSet;
 import java.util.List;
@@ -10,30 +9,31 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.ImmutableMap;
 
+import github.sejour.selinuntis.core.FetchObjectInfo;
+import github.sejour.selinuntis.core.FromFetchObjectInfo;
 import github.sejour.selinuntis.core.FromObjectInfo;
+import github.sejour.selinuntis.core.JoinFetchObjectInfo;
 import github.sejour.selinuntis.core.JoinObjectInfo;
 import github.sejour.selinuntis.core.ObjectInfo;
 import github.sejour.selinuntis.core.TableInfo;
-import github.sejour.selinuntis.core.statement.clause.From;
-import github.sejour.selinuntis.core.statement.clause.FromTableClass;
-import github.sejour.selinuntis.core.statement.clause.StringExpressionClause;
-import github.sejour.selinuntis.core.utils.CollectionUtils;
-import github.sejour.selinuntis.core.FetchObjectInfo;
-import github.sejour.selinuntis.core.FromFetchObjectInfo;
-import github.sejour.selinuntis.core.JoinFetchObjectInfo;
 import github.sejour.selinuntis.core.error.StatementBuildException;
-import github.sejour.selinuntis.core.statement.clause.Keyword;
 import github.sejour.selinuntis.core.statement.chain.Query;
 import github.sejour.selinuntis.core.statement.chain.QueryImpl;
 import github.sejour.selinuntis.core.statement.clause.Clause;
 import github.sejour.selinuntis.core.statement.clause.FetchTableObject;
+import github.sejour.selinuntis.core.statement.clause.From;
+import github.sejour.selinuntis.core.statement.clause.FromTableClass;
+import github.sejour.selinuntis.core.statement.clause.Keyword;
 import github.sejour.selinuntis.core.statement.clause.ObjectFieldJoin;
+import github.sejour.selinuntis.core.statement.clause.StringExpressionClause;
 import github.sejour.selinuntis.core.statement.clause.TableObject;
+import github.sejour.selinuntis.core.utils.CollectionUtils;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StatementBuilderImpl implements StatementBuilder {
     private final Map<Class<?>, TableInfo> tableInfoMap;
+    private final String fetchColumnsAliasPattern; // ex: {0}_{1}  (0: object alias, 1: column name)
 
     @Override
     public Statement buildSelect(@NonNull Query<?> query) throws StatementBuildException {
@@ -127,7 +128,8 @@ public class StatementBuilderImpl implements StatementBuilder {
                                    from.getTableClass().getName())));
             if (from instanceof FetchTableObject) {
                 objectInfo = new FromFetchObjectInfo(from.getAlias(), tableInfo,
-                                                     ((FetchTableObject) from).getFetchColumns());
+                                                     ((FetchTableObject) from).getFetchColumns(),
+                                                     fetchColumnsAliasPattern);
             } else {
                 objectInfo = new FromObjectInfo(from.getAlias(), tableInfo);
             }
@@ -146,7 +148,8 @@ public class StatementBuilderImpl implements StatementBuilder {
                                    joinField.getTableClass())));
             if (join instanceof FetchTableObject) {
                 objectInfo = new JoinFetchObjectInfo(join, tableInfo, joinField,
-                                                     ((FetchTableObject) join).getFetchColumns());
+                                                     ((FetchTableObject) join).getFetchColumns(),
+                                                     fetchColumnsAliasPattern);
             } else {
                 objectInfo = new JoinObjectInfo(join, tableInfo, joinField);
             }
@@ -165,7 +168,7 @@ public class StatementBuilderImpl implements StatementBuilder {
     }
 
     private static String buildSelect(boolean distinct,
-                                      List<String> selectFields,
+                                      Set<String> selectFields,
                                       Set<FetchObjectInfo> fetchObjects) throws StatementBuildException {
         final var builder = new StringBuilder(Keyword.SELECT.getClause());
 
@@ -174,17 +177,18 @@ public class StatementBuilderImpl implements StatementBuilder {
                    .append(Keyword.DISTINCT.getClause());
         }
 
-        final var fields = join(",",
-             join(",", selectFields),
-             fetchObjects.stream()
-                         .map(FetchObjectInfo::getFetchColumnsString)
-                         .collect(Collectors.joining(",")));
+        final var fields = Stream
+                .concat(selectFields.stream(),
+                        fetchObjects.stream()
+                                    .map(FetchObjectInfo::getSelectFieldsString))
+                .collect(Collectors.joining(","));
         if (StringUtils.isEmpty(fields)) {
             throw new StatementBuildException("select fields not exist");
         }
 
         return builder.append(" ")
-                      .append(fields).toString();
+                      .append(fields)
+                      .toString();
     }
 
     private static String buildClause(List<Clause> sequence,

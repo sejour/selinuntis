@@ -14,12 +14,12 @@ public class Select {
         return QueryImpl.from(new FromTableClass(tableClass, alias));
     }
 
-    public static <T> Query<T> fromFetch(@NonNull Class<T> tableClass, @NonNull String... fields) {
-        return fromFetchWithAlias(tableClass, "", fields);
+    public static <T> Query<T> fromFetch(@NonNull Class<T> tableClass, @NonNull String... fetchColumns) {
+        return fromFetchWithAlias(tableClass, "", fetchColumns);
     }
 
     public static <T> Query<T> fromFetchWithAlias(@NonNull Class<T> tableClass, @NonNull String alias,
-                                                  @NonNull String... fields) {
-        return QueryImpl.from(new FromFetchTableClass(tableClass, alias, fields));
+                                                  @NonNull String... fetchColumns) {
+        return QueryImpl.from(new FromFetchTableClass(tableClass, alias, fetchColumns));
     }
 }
