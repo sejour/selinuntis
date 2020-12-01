@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import github.sejour.selinuntis.core.error.StatementBuildException;
 import github.sejour.selinuntis.core.statement.clause.ObjectFieldJoin;
 
 import lombok.Getter;
@@ -20,7 +19,7 @@ public class JoinFetchObjectInfo extends JoinObjectInfo implements FetchObjectIn
 
     public JoinFetchObjectInfo(@NonNull ObjectFieldJoin join,
                                @NonNull TableInfo info, @NonNull JoinField field,
-                               @NonNull Set<String> fetchColumns) throws StatementBuildException {
+                               @NonNull Set<String> fetchColumns) {
         super(join, info, field);
 
         final var columns = createFetchColumns(

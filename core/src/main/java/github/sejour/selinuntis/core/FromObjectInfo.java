@@ -1,44 +1,20 @@
 package github.sejour.selinuntis.core;
 
-import static java.lang.String.join;
-
-import org.apache.commons.lang3.StringUtils;
-
 import github.sejour.selinuntis.core.statement.clause.Keyword;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 @Getter
-public class FromObjectInfo implements ObjectInfo {
+public class FromObjectInfo extends AbstractObjectInfo {
     private final String alias;
-    private final TableInfo info;
+    private final ResultTypeInfo info;
     private final String clause;
 
-    public FromObjectInfo(String alias, TableInfo info) {
+    public FromObjectInfo(@NonNull String alias,
+                          @NonNull TableInfo info) {
         this.alias = alias;
         this.info = info;
-        clause = join(" ", Keyword.FROM.getClause(), info.getTableName());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof FromObjectInfo) {
-            final var o = (FromObjectInfo) other;
-            if (StringUtils.isEmpty(alias) && StringUtils.isEmpty(o.alias)) {
-                return info.equals(o.info);
-            }
-            if (StringUtils.equals(alias, o.alias)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        if (StringUtils.isNotEmpty(alias)) {
-            return alias.hashCode();
-        }
-        return info.hashCode();
+        clause = String.join(" ", Keyword.FROM.getClause(), info.getTableName());
     }
 }

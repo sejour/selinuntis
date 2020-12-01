@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import github.sejour.selinuntis.core.error.StatementBuildException;
-
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -17,8 +15,9 @@ public class FromFetchObjectInfo extends FromObjectInfo implements FetchObjectIn
     private final String selectFieldsString;
     private final Map<String, Field> fetchColumnFieldMap;
 
-    public FromFetchObjectInfo(@NonNull String alias, @NonNull TableInfo info,
-                               @NonNull Set<String> fetchColumns) throws StatementBuildException {
+    public FromFetchObjectInfo(@NonNull String alias,
+                               @NonNull TableInfo info,
+                               @NonNull Set<String> fetchColumns) {
         super(alias, info);
 
         final var columns = createFetchColumns(

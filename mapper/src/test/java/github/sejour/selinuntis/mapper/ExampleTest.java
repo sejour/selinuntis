@@ -1,14 +1,15 @@
 package github.sejour.selinuntis.mapper;
 
-import static github.sejour.selinuntis.core.statement.chain.Select.from;
 import static github.sejour.selinuntis.core.statement.chain.Chains.asc;
 import static github.sejour.selinuntis.core.statement.chain.Chains.condition;
+import static github.sejour.selinuntis.core.statement.chain.Select.from;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import github.sejour.selinuntis.core.annotation.Column;
 import github.sejour.selinuntis.core.annotation.Id;
+import github.sejour.selinuntis.core.annotation.SelectField;
 import github.sejour.selinuntis.core.annotation.Table;
 import github.sejour.selinuntis.mapper.annotation.Param;
 import github.sejour.selinuntis.mapper.annotation.QueryCache;
@@ -26,6 +27,9 @@ public class ExampleTest {
 
         @Column
         String name;
+
+        @SelectField
+        Integer count;
     }
 
     @AllArgsConstructor

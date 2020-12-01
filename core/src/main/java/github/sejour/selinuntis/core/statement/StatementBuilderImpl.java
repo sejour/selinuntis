@@ -21,7 +21,8 @@ import github.sejour.selinuntis.core.FromObjectInfo;
 import github.sejour.selinuntis.core.JoinFetchObjectInfo;
 import github.sejour.selinuntis.core.JoinObjectInfo;
 import github.sejour.selinuntis.core.ObjectInfo;
-import github.sejour.selinuntis.core.TableInfo;
+import github.sejour.selinuntis.core.ResultObjectInfo;
+import github.sejour.selinuntis.core.ResultTypeInfoMap;
 import github.sejour.selinuntis.core.error.StatementBuildException;
 import github.sejour.selinuntis.core.statement.chain.Query;
 import github.sejour.selinuntis.core.statement.chain.QueryImpl;
@@ -29,6 +30,7 @@ import github.sejour.selinuntis.core.statement.clause.Clause;
 import github.sejour.selinuntis.core.statement.clause.FetchTableObject;
 import github.sejour.selinuntis.core.statement.clause.From;
 import github.sejour.selinuntis.core.statement.clause.FromTableClass;
+import github.sejour.selinuntis.core.statement.clause.FromTableName;
 import github.sejour.selinuntis.core.statement.clause.Keyword;
 import github.sejour.selinuntis.core.statement.clause.ObjectFieldJoin;
 import github.sejour.selinuntis.core.statement.clause.StringExpressionClause;
@@ -40,7 +42,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class StatementBuilderImpl implements StatementBuilder {
-    private final Map<Class<?>, TableInfo> tableInfoMap;
+    private final ResultTypeInfoMap resultTypeInfoMap;
 
     @Override
     public Statement buildSelect(@NonNull Query<?> query) throws StatementBuildException {
@@ -120,8 +122,8 @@ public class StatementBuilderImpl implements StatementBuilder {
 
         if (node.object instanceof FromTableClass) {
             final var from = (FromTableClass) node.object;
-            final var tableInfo = Optional
-                    .ofNullable(tableInfoMap.get(from.getTableClass()))
+            final var tableInfo = resultTypeInfoMap
+                    .getAsTableInfo(from.getTableClass())
                     .orElseThrow(() -> new StatementBuildException(
                             format("table class used in from is not registered: %s",
                                    from.getTableClass().getName())));
@@ -131,6 +133,10 @@ public class StatementBuilderImpl implements StatementBuilder {
             } else {
                 objectInfo = new FromObjectInfo(from.getAlias(), tableInfo);
             }
+        } else if (node.object instanceof FromTableName) {
+            final var from = (FromTableName) node.object;
+            objectInfo = ResultObjectInfo
+                    .from(resultTypeInfoMap, from.getResultType(), from.getTableName(), from.getAlias());
         } else if (node.object instanceof ObjectFieldJoin) {
             final var join = (ObjectFieldJoin) node.object;
             final var joinField = parent
@@ -139,8 +145,8 @@ public class StatementBuilderImpl implements StatementBuilder {
                     .orElseThrow(() -> new StatementBuildException(
                             format("join object field not found: %s",
                                    join.getFieldName())));
-            final var tableInfo = Optional
-                    .ofNullable(tableInfoMap.get(joinField.getTableClass()))
+            final var tableInfo = resultTypeInfoMap
+                    .getAsTableInfo(joinField.getTableClass())
                     .orElseThrow(() -> new StatementBuildException(
                             format("table class used in join is not supported: %s",
                                    joinField.getTableClass())));

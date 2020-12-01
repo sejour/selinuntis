@@ -2,6 +2,7 @@ package github.sejour.selinuntis.core.statement.chain;
 
 import github.sejour.selinuntis.core.statement.clause.FromTableClass;
 import github.sejour.selinuntis.core.statement.clause.FromFetchTableClass;
+import github.sejour.selinuntis.core.statement.clause.FromTableName;
 
 import lombok.NonNull;
 
@@ -21,5 +22,16 @@ public class Select {
     public static <T> Query<T> fromFetchWithAlias(@NonNull Class<T> tableClass, @NonNull String alias,
                                                   @NonNull String... fetchColumns) {
         return QueryImpl.from(new FromFetchTableClass(tableClass, alias, fetchColumns));
+    }
+
+    public static <T> Query<T> from(@NonNull String tableName,
+                                    @NonNull Class<T> resultType) {
+        return from(tableName, resultType, "");
+    }
+
+    public static <T> Query<T> from(@NonNull String tableName,
+                                    @NonNull Class<T> resultType,
+                                    @NonNull String alias) {
+        return QueryImpl.from(new FromTableName(tableName, resultType, alias));
     }
 }
