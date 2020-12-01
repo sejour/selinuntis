@@ -1,5 +1,6 @@
 package github.sejour.selinuntis.core.statement.clause;
 
+import static github.sejour.selinuntis.core.statement.clause.TableObjectSupport.validateAlias;
 import static java.lang.String.format;
 import static java.lang.String.join;
 
@@ -24,7 +25,7 @@ public class ObjectFieldJoin extends Join {
         }
 
         this.type = type;
-        this.alias = alias;
+        this.alias = validateAlias(alias);;
 
         final var parsed = StringUtils.split(objectField, ".");
         if (parsed == null) {

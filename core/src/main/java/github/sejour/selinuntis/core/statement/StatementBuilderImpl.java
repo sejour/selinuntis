@@ -41,7 +41,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StatementBuilderImpl implements StatementBuilder {
     private final Map<Class<?>, TableInfo> tableInfoMap;
-    private final String fetchColumnsAliasPattern; // ex: {0}_{1}  (0: object alias, 1: column name)
 
     @Override
     public Statement buildSelect(@NonNull Query<?> query) throws StatementBuildException {
@@ -128,8 +127,7 @@ public class StatementBuilderImpl implements StatementBuilder {
                                    from.getTableClass().getName())));
             if (from instanceof FetchTableObject) {
                 objectInfo = new FromFetchObjectInfo(from.getAlias(), tableInfo,
-                                                     ((FetchTableObject) from).getFetchColumns(),
-                                                     fetchColumnsAliasPattern);
+                                                     ((FetchTableObject) from).getFetchColumns());
             } else {
                 objectInfo = new FromObjectInfo(from.getAlias(), tableInfo);
             }
@@ -148,8 +146,7 @@ public class StatementBuilderImpl implements StatementBuilder {
                                    joinField.getTableClass())));
             if (join instanceof FetchTableObject) {
                 objectInfo = new JoinFetchObjectInfo(join, tableInfo, joinField,
-                                                     ((FetchTableObject) join).getFetchColumns(),
-                                                     fetchColumnsAliasPattern);
+                                                     ((FetchTableObject) join).getFetchColumns());
             } else {
                 objectInfo = new JoinObjectInfo(join, tableInfo, joinField);
             }
@@ -177,17 +174,17 @@ public class StatementBuilderImpl implements StatementBuilder {
                    .append(Keyword.DISTINCT.getClause());
         }
 
-        final var fields = Stream
+        final var fieldsString = Stream
                 .concat(selectFields.stream(),
                         fetchObjects.stream()
                                     .map(FetchObjectInfo::getSelectFieldsString))
                 .collect(Collectors.joining(","));
-        if (StringUtils.isEmpty(fields)) {
+        if (StringUtils.isEmpty(fieldsString)) {
             throw new StatementBuildException("select fields not exist");
         }
 
         return builder.append(" ")
-                      .append(fields)
+                      .append(fieldsString)
                       .toString();
     }
 

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 public class TableInfo {
     private final String tableName;
     private final Map<String, Field> columns; // key: column name of table
+    private final Map<String, Field> selectFields; // key: label
     private final Map<String, JoinField> joinFields; // key: field name of java object
 
     public Optional<Field> getColumnField(String columnName) {
