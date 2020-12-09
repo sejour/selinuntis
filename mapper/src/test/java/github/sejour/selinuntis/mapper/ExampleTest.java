@@ -6,9 +6,15 @@ import static github.sejour.selinuntis.core.statement.chain.Select.from;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import github.sejour.selinuntis.core.annotation.Column;
 import github.sejour.selinuntis.core.annotation.Id;
+import github.sejour.selinuntis.core.annotation.ResultType;
 import github.sejour.selinuntis.core.annotation.SelectField;
 import github.sejour.selinuntis.core.annotation.Table;
 import github.sejour.selinuntis.mapper.annotation.Param;
@@ -58,6 +64,20 @@ public class ExampleTest {
     public void test() {
         final Example result = exampleRepository.find("", "", "").execute();
         // TODO
+    }
+
+    @ResultType
+    public class TestResultType {
+    }
+
+    @Test
+    public void testtest() {
+        final var scanner = new Reflections(new ConfigurationBuilder()
+                                                    .setUrls(ClasspathHelper.forPackage("github.sejour.selinuntis.mapper"))
+                                                    .setScanners(new SubTypesScanner(),
+                                                                 new TypeAnnotationsScanner()));
+        scanner.getTypesAnnotatedWith(ResultType.class)
+               .forEach(c -> System.out.println(c.getName()));
     }
 
 }
